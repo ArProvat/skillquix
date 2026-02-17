@@ -1,5 +1,5 @@
 
-from pydantic import BaseModel , Field
+from pydantic import BaseModel, Field
 from typing import List, Optional
 
 class experience(BaseModel):
@@ -29,24 +29,29 @@ class project(BaseModel):
      start_date: str = Field(..., example="Start Date")
      end_date: str = Field(..., example="End Date")
 
-class skill(BaseModel):
-     top_skills: List[str] = Field(..., example="Top Skills are most used in the resume and projects")
-     soft_skills: List[str] = Field(..., example="Soft Skills are most used in the resume and projects")
-     tools_and_platforms: List[str] = Field(..., example="Tools and Platforms are most used in the resume and projects")
-     programming_languages: List[str] = Field(..., example="Programming Languages are most used in the resume and projects")
+class skill_details(BaseModel):
+     name: str = Field(..., example="Skill name")
+     proficiency_level: str = Field(..., example="Skill level(Beginner,Intermediate,Advanced,Expert)")
+     years_of_experience: int = Field(..., example="Years of experience in the skill")
 
-class other_links(BaseModel):
+class skill(BaseModel):
+     category: str = Field(..., example="Skill category(Frontend,Backend,Database,Tools and Platforms,DevOps,AI/ML,Data Science,Mobile App Development,Other)")
+     skills: List[skill_details] = Field(..., example="List of skills in the category")
+
+class other_link(BaseModel):
      type: str = Field(..., example="Type of the link like LinkedIn, GitHub etc.")
      link: str = Field(..., example="Link to the other link")
+
 class ResumeParse(BaseModel):
      Name: str = Field(..., example="Name of the candidate")
      address: str = Field(..., example="Address of the candidate")
      Email: str = Field(..., example="Email of the candidate")
      Phone: List[str] = Field(..., example="Phone of the candidate")
-     Skills: Optional[skill] = Field(..., example="Skills of the candidate")
+     professional_summary: Optional[str] = Field(..., example="Professional summary of the candidate")
+     tech_stack: Optional[List[skill]] = Field(..., example="Skills of the candidate")
      projects: Optional[List[project]] = Field(..., example="Projects of the candidate")
      work_experience: Optional[List[experience]] = Field(..., example="Work Experience of the candidate")
      Education: Optional[List[education]] = Field(..., example="Education of the candidate")
-     other_links: Optional[List[other_links]] = Field(..., example="Other links of the candidate")
+     other_links: Optional[List[other_link]] = Field(..., example="Other links of the candidate")
      certificates: Optional[List[certificate]] = Field(..., example="Certificates of the candidate")
      languages: Optional[List[str]] = Field(..., example="list of languages candidate know")

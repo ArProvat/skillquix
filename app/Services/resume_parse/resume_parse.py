@@ -3,7 +3,7 @@
 from openai import AsyncOpenAI
 from app.config.settings import settings
 from app.prompt.prompt import resume_parse_system_prompt
-from resume_parse_schema import ResumeParse
+from .resume_parse_schema import ResumeParse
 
 
 

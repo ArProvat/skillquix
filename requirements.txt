@@ -15,3 +15,5 @@ langgraph-checkpoint-mongodb
 langchain-core
 python-dotenv
 pymupdf
+python-docx
+
