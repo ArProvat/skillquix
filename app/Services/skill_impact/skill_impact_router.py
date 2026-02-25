@@ -1,22 +1,17 @@
-from fastapi import APIRouter,HTTPException,Depends,Form
+from fastapi import APIRouter,HTTPException
 from .skill_impact import SkillImpact
-from typing import Optional
-from app.moduls.auth.auth import verify_token
-
+from .skill_impact_schema import SkillImpactSchema
 
 router = APIRouter()
 
 
-@router.post("/skill-impact")
+@router.post("/skill-impact" ,response_model=SkillImpactSchema)
 async def skill_impact(
-     skill:Optional[str] = Form(None),
-     user = Depends(verify_token)
+     skill:str,
 ):
      try:
           result = await SkillImpact().get_skill_impact(skill)
           return result
 
-     except HTTPException:
-          raise
      except Exception as e:
           raise HTTPException(status_code=500, detail=str(e))

@@ -7,12 +7,13 @@ class MongoDB:
      def __init__(self):
           self.client = AsyncIOMotorClient(settings.MONGODB_URL)
           self.db = self.client[settings.DB_NAME]
-          self.user_collection = self.db['users']
-          self.resume_collection = self.db['resumes']
-          self.cover_letter_collection = self.db['cover_letters']
-          self.job_collection = self.db['jobs']
-          self.recommended_skill_collection = self.db['recommended_skills']
-          
+          self.user_collection = self.db['User']
+          self.resume_collection = self.db['Resume']
+          self.cover_letter_collection = self.db['CoverLetter']
+          self.job_collection = self.db['Gig']
+          self.recommended_skill_collection = self.db['RecommendedSkill']
+          self.skill_impact_collection = self.db['SkillImpact']
+
 
      def get_db(self):
           return self.db
@@ -22,6 +23,7 @@ class MongoDB:
           await self.cover_letter_collection.create_index([('user_id', 1)])
           await self.job_collection.create_index([('user_id', 1)])
           await self.recommended_skill_collection.create_index([('user_id', 1)])
+          await self.skill_impact_collection.create_index([('skill', 1)])
 
      async def insert_resume_parse_info(self,user_id:str,user_resume:dict):
           try:
