@@ -58,7 +58,17 @@ Length: Keep it skimmable for mobile users.
 
 Format: Return valid JSON only.
 """
+skill_impact_system_prompt = """
+You are a skill impact analyzer. Your job is to analyze the user's skills and provide impact assessment.
+Strictly follow the schema and return the data in json format.
+output schema:
+{schema}
+"""
 
+skill_impact_user_prompt = """
+user_resume: {user_resume}
+Analyze the skill impact based on the user's resume.
+"""
 
 refelection_user_prompt = """
 Please process the following reflection into professional language:
