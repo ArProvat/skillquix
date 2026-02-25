@@ -7,12 +7,11 @@ class MongoDB:
      def __init__(self):
           self.client = AsyncIOMotorClient(settings.MONGODB_URL)
           self.db = self.client[settings.DB_NAME]
-          self.user_collection = self.db['User']
-          self.resume_collection = self.db['Resume']
-          self.cover_letter_collection = self.db['CoverLetter']
-          self.job_collection = self.db['Gig']
-          self.recommended_skill_collection = self.db['RecommendedSkill']
-          self.skill_impact_collection = self.db['SkillImpact']
+          self.user_collection = self.db['users']
+          self.resume_collection = self.db['resumes']
+          self.cover_letter_collection = self.db['cover_letters']
+          self.job_collection = self.db['jobs']
+          self.recommended_skill_collection = self.db['recommended_skills']
           
 
      def get_db(self):
@@ -180,23 +179,3 @@ class MongoDB:
                raise e
           # end try
      
-     async def insert_skill_impact(self,skill:str,skill_impact:dict):
-          try:
-               
-               skill_impact['skill'] = skill
-               
-               result = await self.skill_impact_collection.insert_one(skill_impact)
-               return {"message":"Skill impact inserted successfully","skill_impact_id":str(result.inserted_id)}
-               
-          except Exception as e:
-               raise e
-          
-     async def get_skill_impact(self,skill:str):
-          try:
-               skill_impact = await self.skill_impact_collection.find_one({'skill':skill},{
-                    "_id":0,
-                    "skill":0,
-               })
-               return skill_impact
-          except Exception as e:
-               raise e

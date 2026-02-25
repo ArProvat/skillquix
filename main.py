@@ -23,7 +23,6 @@ app.add_middleware(
 
 app.include_router(resume_parse_router,prefix="/v1",tags=["Resume Parse"])
 app.include_router(refelection_router,prefix="/v1",tags=["Refelection"])
-app.include_router(recommend_skill_router,prefix="/v1",tags=["Recommend Skill"])
 
 @app.get("/")
 def read_root():
