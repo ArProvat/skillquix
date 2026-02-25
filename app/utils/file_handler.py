@@ -1,36 +1,40 @@
-from fastapi import File
 from app.config.settings import settings
-from langchain_community.document_loaders import  PyMuPDFLoader 
+import fitz  
 from docx import Document
 import tempfile
+import os
+
 
 class FileHandler:
      @staticmethod
-     async def file_handler(file: bytes, extension: str): 
+     async def file_handler(file: bytes, extension: str) -> str:
           try:
-               supported = ['.pdf', '.docx']
+               supported = ['pdf', 'docx']  # No dot, to match .split(".")[-1]
                if extension not in supported:
                     return "Unsupported file format"
 
-               with tempfile.NamedTemporaryFile(delete=True, suffix=extension) as temp_file:
-                    temp_file.write(file)
-                    temp_file.flush()  
-                    
-                    temp_file_path = temp_file.name
-                    
-                    if extension == '.pdf': loader = PyMuPDFLoader(temp_file_path)
-                    elif extension == '.docx': doc = Document(temp_file_path) 
+               suffix = f".{extension}"
 
-                    if loader :
-                         docs = loader.load()
-                         full_text = " ".join([doc.page_content for doc in docs])
-                    elif doc :
+               # delete=False so the file persists on disk when loaders open it
+               with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
+                    temp_file.write(file)
+                    temp_file_path = temp_file.name
+
+               try:
+                    if extension == 'pdf':
+                         doc = fitz.open(temp_file_path)
+                         full_text = ""
+                         for page in doc:
+                              full_text += page.get_text()
+
+                    elif extension == 'docx':
+                         doc = Document(temp_file_path)
                          full_text = " ".join([para.text for para in doc.paragraphs])
-                    else :
-                         full_text = temp_file_path.read()
-                    
-                    return full_text[:1500] if len(full_text) > 1500 else full_text
+
+               finally:
+                    os.remove(temp_file_path)  # Clean up manually since delete=False
+
+               return full_text
 
           except Exception as e:
                return f"Error processing file: {str(e)}"
-

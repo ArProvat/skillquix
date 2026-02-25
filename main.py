@@ -1,6 +1,8 @@
 from fastapi import FastAPI,HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.Services.resume_parse.resume_parse_router import router as resume_parse_router
+from app.Services.refelection.refelection_router import router as refelection_router
+from app.Services.recommend_skill.recommend_skill_router import router as recommend_skill_router
 
 
 app = FastAPI(

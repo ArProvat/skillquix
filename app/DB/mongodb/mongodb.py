@@ -1,7 +1,7 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from app.config.settings import settings
 from bson import ObjectId
-from app.Services.resume_parse.resume_parse_schema import skill
+from app.Services.resume_parse.resume_parse_schema import Skill
 
 class MongoDB:
      def __init__(self):
@@ -61,11 +61,11 @@ class MongoDB:
 
      from bson import ObjectId
 
-     async def smart_upsert_skill(self, user_id: str, skill:skill):
+     async def smart_upsert_skill(self, user_id: str, Skill:Skill):
           try:
                oid = ObjectId(user_id)
-               skill_name = skill.skills.name
-               category = skill.category
+               skill_name = Skill.skills.name
+               category = Skill.category
                
                update_result = await self.resume_collection.update_one(
                     {
@@ -79,8 +79,8 @@ class MongoDB:
                     },
                     {
                          "$set": {
-                              "tech_stack.$[cat].skills.$[sk].proficiency_level": skill.skills.proficiency_level,
-                              "tech_stack.$[cat].skills.$[sk].years_of_experience": skill.skills.years_of_experience
+                              "tech_stack.$[cat].skills.$[sk].proficiency_level": Skill.skills.proficiency_level,
+                              "tech_stack.$[cat].skills.$[sk].years_of_experience": Skill.skills.years_of_experience
                          }
                     },
                     array_filters=[
