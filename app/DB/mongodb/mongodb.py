@@ -1,16 +1,18 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from app.config.settings import settings
 from bson import ObjectId
-from app.Services.resume_parse.resume_parse_schema import skill
+from app.Services.resume_parse.resume_parse_schema import Skill
 
 class MongoDB:
      def __init__(self):
           self.client = AsyncIOMotorClient(settings.MONGODB_URL)
           self.db = self.client[settings.DB_NAME]
-          self.user_collection = self.db['users']
-          self.resume_collection = self.db['resumes']
-          self.cover_letter_collection = self.db['cover_letters']
-          self.job_collection = self.db['jobs']
+          self.user_collection = self.db['User']
+          self.resume_collection = self.db['Resume']
+          self.cover_letter_collection = self.db['CoverLetter']
+          self.job_collection = self.db['Gig']
+          self.recommended_skill_collection = self.db['RecommendedSkill']
+          self.skill_impact_collection = self.db['SkillImpact']
           
 
      def get_db(self):
@@ -20,6 +22,7 @@ class MongoDB:
           await self.resume_collection.create_index([('user_id', 1)])
           await self.cover_letter_collection.create_index([('user_id', 1)])
           await self.job_collection.create_index([('user_id', 1)])
+          await self.recommended_skill_collection.create_index([('user_id', 1)])
 
      async def insert_resume_parse_info(self,user_id:str,user_resume:dict):
           try:
@@ -59,11 +62,11 @@ class MongoDB:
 
      from bson import ObjectId
 
-     async def smart_upsert_skill(self, user_id: str, skill:skill):
+     async def smart_upsert_skill(self, user_id: str, Skill:Skill):
           try:
                oid = ObjectId(user_id)
-               skill_name = skill.skills.name
-               category = skill.category
+               skill_name = Skill.skills.name
+               category = Skill.category
                
                update_result = await self.resume_collection.update_one(
                     {
@@ -77,8 +80,8 @@ class MongoDB:
                     },
                     {
                          "$set": {
-                              "tech_stack.$[cat].skills.$[sk].proficiency_level": skill.skills.proficiency_level,
-                              "tech_stack.$[cat].skills.$[sk].years_of_experience": skill.skills.years_of_experience
+                              "tech_stack.$[cat].skills.$[sk].proficiency_level": Skill.skills.proficiency_level,
+                              "tech_stack.$[cat].skills.$[sk].years_of_experience": Skill.skills.years_of_experience
                          }
                     },
                     array_filters=[
@@ -118,7 +121,7 @@ class MongoDB:
           try:
                user_id = ObjectId(user_id)
                skill = await self.resume_collection.find_one({'user_id':user_id},{"tech_stack":1})
-               
+
                return skill
           except Exception as e:
                raise e
@@ -149,3 +152,51 @@ class MongoDB:
                raise e
           # end try
      
+     async def insert_recommended_skill(self,user_id:str,recommended_skill:dict):
+          try:
+               user_id = ObjectId(user_id)
+               exist= await self.recommended_skill_collection.find_one({'user_id':user_id})
+               if exist:
+                    await self.recommended_skill_collection.update_one({'user_id':user_id},{"$push":{"recommended_skills":recommended_skill.recommended_skills}})
+                    return {"message":"Recommended skill updated successfully","recommended_skill_id":str(exist['_id'])}  
+               # comment: insert user recommended skill
+               recommended_skill['user_id'] = user_id
+               result = await self.recommended_skill_collection.insert_one(recommended_skill)
+               return {"message":"Recommended skill inserted successfully","recommended_skill_id":str(result.inserted_id)}
+               
+          except Exception as e:
+               raise e
+          # end try
+
+     async def get_recommended_skill(self,user_id:str):
+          try:
+               user_id = ObjectId(user_id)
+               recommended_skill = await self.recommended_skill_collection.find_one({'user_id':user_id})
+               if recommended_skill:
+                    recommended_skill['_id'] = str(recommended_skill['_id'])
+                    recommended_skill['user_id'] = str(recommended_skill['user_id'])
+               return recommended_skill
+          except Exception as e:
+               raise e
+          # end try
+     
+     async def insert_skill_impact(self,skill:str,skill_impact:dict):
+          try:
+               
+               skill_impact['skill'] = skill
+               
+               result = await self.skill_impact_collection.insert_one(skill_impact)
+               return {"message":"Skill impact inserted successfully","skill_impact_id":str(result.inserted_id)}
+               
+          except Exception as e:
+               raise e
+          
+     async def get_skill_impact(self,skill:str):
+          try:
+               skill_impact = await self.skill_impact_collection.find_one({'skill':skill},{
+                    "_id":0,
+                    "skill":0,
+               })
+               return skill_impact
+          except Exception as e:
+               raise e

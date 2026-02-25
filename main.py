@@ -1,6 +1,8 @@
 from fastapi import FastAPI,HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.Services.resume_parse.resume_parse_router import router as resume_parse_router
+from app.Services.refelection.refelection_router import router as refelection_router
+from app.Services.recommend_skill.recommend_skill_router import router as recommend_skill_router
 
 
 app = FastAPI(
@@ -20,6 +22,8 @@ app.add_middleware(
 )
 
 app.include_router(resume_parse_router,prefix="/v1",tags=["Resume Parse"])
+app.include_router(refelection_router,prefix="/v1",tags=["Refelection"])
+app.include_router(recommend_skill_router,prefix="/v1",tags=["Recommend Skill"])
 
 @app.get("/")
 def read_root():
