@@ -1,8 +1,10 @@
-from pydantic import BaseModel, Field
-from typing import List
+
+
+
+from pydantic import BaseModel
 
 
 class refelectionResponse(BaseModel):
-     skills: List[str] = Field(default_factory=list )
-     impact_bullets: List[str] = Field(default_factory=list)
-     summary: str = Field(default="")
+     skills: list[str],
+     impact_bullets: list[str],
+     summary: str
