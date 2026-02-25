@@ -28,7 +28,7 @@ class RecommendSkillAgent:
 
      @tool
      def search(self, query: str) -> str:
-              """Search the web for information about a given query."""
+          """Search the web for information about a given query."""
           search = DuckDuckGoSearchRun()
           return search.invoke(query)
      
