@@ -1,9 +1,11 @@
-
 from openai import AsyncOpenAI
 from app.config.settings import settings
 from app.prompt.prompt import skill_impact_system_prompt, skill_impact_user_prompt
 from .skill_impact_schema import SkillImpactSchema
 from app.DB.mongodb.mongodb import MongoDB
+from fastapi import HTTPException 
+import json 
+
 
 
 
@@ -26,7 +28,7 @@ class SkillImpact:
                     messages=[
                          {"role": "system", "content": skill_impact_system_prompt.format(schema=SkillImpactSchema.model_json_schema())},
                          {"role": "user", "content": skill_impact_user_prompt.format(skill=skill)}
-                    ]
+                    ],
                     response_format={"type": "json_object"}
                )
 
@@ -35,7 +37,8 @@ class SkillImpact:
                     response = response[7:-3]
                if response.startswith("```"):
                     response = response[3:-3]
-               await self.mongodb.insert_skill_impact(skill,response)
-               return response
+               response_dict = json.loads(response)  # ✅ parse first
+               await self.mongodb.insert_skill_impact(skill, response_dict)
+               return response_dict 
           except Exception as e:
                raise HTTPException(status_code=500, detail=str(e))
