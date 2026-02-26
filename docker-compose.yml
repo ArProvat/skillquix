@@ -1,4 +1,5 @@
 version: '3.8'
+
 services:
   app:
     build: .
@@ -8,4 +9,24 @@ services:
     env_file:
       - .env
     restart: unless-stopped
-    
+    depends_on:
+      - qdrant
+    networks:
+      - skillquix_net
+
+  qdrant:
+    image: qdrant/qdrant
+    restart: always
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - skillquix_net
+
+volumes:
+  qdrant_data:
+
+networks:
+  skillquix_net:
+    driver: bridge

@@ -19,4 +19,5 @@ python-dotenv
 pymupdf
 python-docx
 sentence-transformers    
+qdrant-client
 
