@@ -13,6 +13,7 @@ class MongoDB:
           self.job_collection = self.db['Gig']
           self.recommended_skill_collection = self.db['RecommendedSkill']
           self.skill_impact_collection = self.db['SkillImpact']
+          self.matches_collection = self.db['Matches']
 
 
      def get_db(self):
@@ -24,6 +25,7 @@ class MongoDB:
           await self.job_collection.create_index([('user_id', 1)])
           await self.recommended_skill_collection.create_index([('user_id', 1)])
           await self.skill_impact_collection.create_index([('skill', 1)])
+          await self.matches_collection.create_index([('user_id', 1)])
 
      async def insert_resume_parse_info(self,user_id:str,user_resume:dict):
           try:

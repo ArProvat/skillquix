@@ -7,10 +7,6 @@ from fastapi import HTTPException
 import json 
 
 
-
-
-
-
 class SkillImpact:
      def __init__(self):
           self.llm = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)

@@ -20,4 +20,5 @@ pymupdf
 python-docx
 sentence-transformers    
 qdrant-client
+apscheduler>=3.10.0
 

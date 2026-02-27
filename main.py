@@ -9,10 +9,14 @@ from app.Services.recommend_skill.recommend_skill_router import router as recomm
 from app.Services.skill_impact.skill_impact_router import router as skill_impact_router
 from app.Services.match_gig.match_gig_router import router as match_gig_router
 from app.DB.vectorDB.router import router as vectorDB_router
+from app.utils.cron import start_scheduler
+from app.Services.match_gig.match_gig import get_match_gig
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-     await create_collections()   # creates Qdrant collections if not exist
+     await create_collections()     # Qdrant collections
+     start_scheduler()  
+     get_match_gig()            # 12hr cron job
      yield
 
 app = FastAPI(
