@@ -135,7 +135,7 @@ async def reindex_all_gigs():
           "failed":        failed,
      }
 
-@router.delete("/admin/qdrant-delete/{gig_id}")
+@router.delete("/qdrant-delete/{gig_id}")
 async def delete_qdrant_point(gig_id: str):
      from app.DB.vectorDB.vectordb import client, GIG_COLLECTION, _id_to_int
      await client.delete(
@@ -143,3 +143,7 @@ async def delete_qdrant_point(gig_id: str):
           points_selector=[_id_to_int(gig_id)]
      )
      return {"message": f"Deleted {gig_id} from Qdrant"}
+
+@router.get("/user-this-month-match-gig/{user_id}")
+async def get_month_match_gig(user_id: str):
+     return await MatchGig().get_user_this_month_match_gig(user_id)
