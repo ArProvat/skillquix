@@ -21,7 +21,7 @@ class ClearityScoreService:
 
     async def get_clearity_score(self, user_id: str) -> dict:
         existing = await self.mongodb.clearityScore_collection.find_one(
-            {"userId": user_id},
+            {"userId": ObjectId(user_id)},
             {"currentMonth": 1, "previousMonth": 1, "updatedAt": 1}
         )
         if existing and self._is_fresh(existing.get("updatedAt")):
@@ -78,7 +78,7 @@ class ClearityScoreService:
     async def _get_logs(self, user_id: str, start: datetime, end: datetime) -> list:
         cursor = self.mongodb.activityLog_collection.find(
             {
-                "userId":    user_id,
+                "userId":    ObjectId(user_id),
                 "createdAt": {"$gte": start, "$lte": end},
             },
             {"action": 1, "createdAt": 1}
@@ -121,7 +121,7 @@ class ClearityScoreService:
         }
 
         await self.mongodb.clearityScore_collection.update_one(
-            {"userId": user_id},
+            {"userId": ObjectId(user_id)},
             {
                 "$set":         doc,
                 "$setOnInsert": {"createdAt": datetime.now(timezone.utc)},
@@ -191,7 +191,7 @@ Respond ONLY with valid JSON, no markdown:
     async def log_activity(self, user_id: str, action: str):
         """Helper — call this anywhere to log user activity."""
         await self.mongodb.activityLog_collection.insert_one({
-            "userId":    user_id,
+            "userId":    ObjectId(user_id),
             "action":    action,
             "createdAt": datetime.now(timezone.utc),
         })

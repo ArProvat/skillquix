@@ -24,6 +24,7 @@ async def debug_clearity_logs(user_id: str):
      from app.DB.mongodb.mongodb import MongoDB
      from datetime import datetime, timezone, timedelta
      from calendar import monthrange
+     from bson import ObjectId
 
      mongodb = MongoDB()
      now     = datetime.now(timezone.utc)
@@ -34,7 +35,7 @@ async def debug_clearity_logs(user_id: str):
      curr_end   = datetime(now.year, now.month, last_day, 23, 59, 59, tzinfo=timezone.utc)
 
      logs = await mongodb.activityLog_collection.find(
-          {"userId": user_id, "createdAt": {"$gte": curr_start, "$lte": curr_end}},
+          {"userId": ObjectId(user_id), "createdAt": {"$gte": curr_start, "$lte": curr_end}},
           {"action": 1, "createdAt": 1}
      ).to_list(length=100)
 

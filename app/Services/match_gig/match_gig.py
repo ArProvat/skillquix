@@ -224,7 +224,7 @@ class MatchGig:
                
                for result in results:
                     await self.mongodb.activityLog_collection.insert_one({
-                         "userId":    result["userId"],
+                         "userId":    ObjectId(result["userId"]),
                          "action":    "MATCHED_GIG",
                          "createdAt": datetime.now(timezone.utc),
                     })
@@ -234,12 +234,11 @@ class MatchGig:
      
      async def get_user_this_month_match_gig(self, user_id: str):
           try:
-               results = await self.mongodb.activityLog_collection.find({
-                    "userId":    user_id,
+               count = await self.mongodb.activityLog_collection.count_documents({
+                    "userId":    ObjectId(user_id),
                     "action":    "MATCHED_GIG",
                     "createdAt": {"$gte": datetime.now(timezone.utc) - timedelta(days=30)},
                })
-               
-               return results.count()
+               return {"user_id": user_id, "matched_gigs_this_month": count}
           except Exception as e:
                raise HTTPException(status_code=500, detail=str(e))
