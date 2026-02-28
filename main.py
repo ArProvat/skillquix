@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.Services.resume_parse.resume_parse_router import router as resume_parse_router
 from app.Services.refelection.refelection_router import router as refelection_router
 from app.Services.recommend_skill.recommend_skill_router import router as recommend_skill_router
+from app.Services.clearity_score.clearity_score_router import router as clearity_score_router
 from app.Services.skill_impact.skill_impact_router import router as skill_impact_router
 from app.Services.match_gig.match_gig_router import router as match_gig_router
 from app.DB.vectorDB.router import router as vectorDB_router
@@ -42,6 +43,7 @@ app.include_router(recommend_skill_router,prefix="/v1",tags=["Recommend Skill"])
 app.include_router(skill_impact_router,prefix="/v1",tags=["Skill Impact"])
 app.include_router(match_gig_router,prefix="/v1",tags=["Match Gig"])
 app.include_router(vectorDB_router,prefix="/v1",tags=["VectorDB Operation"])
+app.include_router(clearity_score_router,prefix="/v1",tags=["Clearity Score"])
 
 @app.get("/")
 def read_root():

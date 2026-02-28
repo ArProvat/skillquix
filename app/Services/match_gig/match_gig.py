@@ -1,6 +1,6 @@
 # match_gig.py
 import asyncio
-from datetime import datetime, timezone
+from datetime import datetime, timezone , timedelta
 from fastapi import HTTPException
 from bson import ObjectId
 from sentence_transformers import SentenceTransformer
@@ -220,6 +220,26 @@ class MatchGig:
 
      async def notify_matched_users_for_gig(self, embedding: list):
           try:
-               return await search_similar_resumes(embedding, limit=100)
+               results = await search_similar_resumes(embedding, limit=100)
+               
+               for result in results:
+                    await self.mongodb.activityLog_collection.insert_one({
+                         "userId":    result["userId"],
+                         "action":    "MATCHED_GIG",
+                         "createdAt": datetime.now(timezone.utc),
+                    })
+               return results
+          except Exception as e:
+               raise HTTPException(status_code=500, detail=str(e))
+     
+     async def get_user_this_month_match_gig(self, user_id: str):
+          try:
+               results = await self.mongodb.activityLog_collection.find({
+                    "userId":    user_id,
+                    "action":    "MATCHED_GIG",
+                    "createdAt": {"$gte": datetime.now(timezone.utc) - timedelta(days=30)},
+               })
+               
+               return results.count()
           except Exception as e:
                raise HTTPException(status_code=500, detail=str(e))

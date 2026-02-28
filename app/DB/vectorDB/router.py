@@ -11,7 +11,8 @@ async def gig_embedding(
 ):
      try:
           await upsert_gig_embedding(gig_id, body.embedding)   # ← calls qdrant, not itself
-          return {"message": "Gig embedding upserted successfully"}
+          user_id = MatchGig().notify_matched_users_for_gig(body.embedding)
+          return {"message": "Gig embedding upserted successfully", "user_id": user_id}
      except Exception as e:
           raise HTTPException(status_code=500, detail=str(e))
 
