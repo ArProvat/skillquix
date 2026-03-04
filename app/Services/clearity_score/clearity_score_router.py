@@ -1,6 +1,8 @@
 # activity_score_router.py
 from fastapi import APIRouter, HTTPException, Query
 from app.Services.clearity_score.clearity_score import get_clearity_score_service
+from app.Services.match_gig.match_gig import MatchGig
+import asyncio
 
 router = APIRouter()
 
@@ -12,8 +14,11 @@ async def get_clearity_score(user_id: str):
      - Recalculated via AI if stale or missing
      """
      try:
-          result = await get_clearity_score_service().get_clearity_score(user_id)
-          return result
+          score_result, match_result = await asyncio.gather(
+               get_clearity_score_service().get_clearity_score(user_id),
+               MatchGig().get_user_this_month_match_gig(user_id),
+          )
+          return {**score_result, **match_result}   # merge both dicts
      except HTTPException:
           raise
      except Exception as e:

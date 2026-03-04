@@ -21,7 +21,7 @@ class ClearityScoreService:
 
     async def get_clearity_score(self, user_id: str) -> dict:
         existing = await self.mongodb.clearityScore_collection.find_one(
-            {"userId": ObjectId(user_id)},
+            {"userId": user_id},              # ← plain string, NOT ObjectId
             {"currentMonth": 1, "previousMonth": 1, "updatedAt": 1}
         )
         if existing and self._is_fresh(existing.get("updatedAt")):
@@ -78,7 +78,7 @@ class ClearityScoreService:
     async def _get_logs(self, user_id: str, start: datetime, end: datetime) -> list:
         cursor = self.mongodb.activityLog_collection.find(
             {
-                "userId":    ObjectId(user_id),
+                "userId":    user_id,         # ← plain string, matches your ActivityLog schema
                 "createdAt": {"$gte": start, "$lte": end},
             },
             {"action": 1, "createdAt": 1}
@@ -102,7 +102,7 @@ class ClearityScoreService:
         )
 
         doc = {
-            "userId": user_id,
+            "userId": user_id,               # ← plain string
             "currentMonth": {
                 "month":       now.strftime("%B %Y"),
                 "score":       curr_score["score"],
@@ -121,7 +121,7 @@ class ClearityScoreService:
         }
 
         await self.mongodb.clearityScore_collection.update_one(
-            {"userId": ObjectId(user_id)},
+            {"userId": user_id},             # ← plain string
             {
                 "$set":         doc,
                 "$setOnInsert": {"createdAt": datetime.now(timezone.utc)},
