@@ -29,6 +29,7 @@ class MongoDB:
           await self.skill_impact_collection.create_index([('skill', 1)])
           await self.matches_collection.create_index([('user_id', 1)])
           await self.clearityScore_collection.create_index([('user_id', 1)])
+          await self.activityLog_collection.create_index([('user_id', 1),('createdAt', 1)])
 
 
      async def insert_resume_parse_info(self,user_id:str,user_resume:dict):

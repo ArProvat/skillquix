@@ -20,9 +20,9 @@ import traceback
 # router — use singleton, not MatchGig() every request
 from app.Services.match_gig.match_gig import get_match_gig
 
-@router.get("/gigs/similar/{user_id}")
+@router.get("/gigs/similar") # Removed {user_id}
 async def get_similar_gigs(
-     user_id: str,
+     user_id: str = Query(...), 
      page: int = Query(default=1, ge=1),
      page_size: int = Query(default=10, ge=1, le=50),
 ):
