@@ -4,43 +4,38 @@ from datetime import datetime, timezone
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from app.DB.mongodb.mongodb import MongoDB
 from app.Services.match_gig.match_gig import MatchGig
+from app.Services.clearity_score.clearity_score import get_clearity_score_service 
 
 
-async def refresh_all_user_matches():
-     print(f"[CRON] Starting match refresh at {datetime.now(timezone.utc)}")
-     mongodb  = MongoDB()
+async def refresh_all_recommendations():
+     """Every 24hrs — re-run vector search for all users, find new gig matches."""
+     print(f"[CRON] Recommendation refresh started at {datetime.now(timezone.utc)}")
+     mongodb   = MongoDB()
      match_gig = MatchGig()
 
-     # Get all users who have a resume with embedding
+     # Get all users who have resumes with embeddings
      cursor = mongodb.resume_collection.find(
-          {"embedding": {"$exists": True}},
-          {"userId": 1}          # only fetch userId, skip large embedding field
+          {"embedding": {"$exists": True}, "domain": {"$exists": True}},
+          {"userId": 1}
      )
      resumes = await cursor.to_list(length=10000)
 
-     success = 0
-     failed  = []
+     success, failed = 0, []
 
      for resume in resumes:
           user_id = str(resume.get("userId", ""))
           if not user_id:
                continue
           try:
-               # run_vector_search_and_save handles saving new gig IDs to DB
-               await match_gig.run_vector_search_and_save(
-                    user_id=user_id,
-                    page=1,
-                    page_size=10     # we only care about saving, not paginating
-               )
+               # Force fresh vector search — bypasses recommendations cache
+               await match_gig._run_search_and_save(user_id, page=1, page_size=10)
                success += 1
+               await asyncio.sleep(0.1)  # avoid thundering herd
           except Exception as e:
                failed.append({"user_id": user_id, "error": str(e)})
 
-     print(f"[CRON] Done — {success} users refreshed, {len(failed)} failed")
-     if failed:
-          print(f"[CRON] Failed users: {failed}")
+     print(f"[CRON] Done — {success} refreshed, {len(failed)} failed")
 
-from app.Services.clearity_score.clearity_score import get_clearity_score_service 
 
 
 async def refresh_all_activity_scores():
