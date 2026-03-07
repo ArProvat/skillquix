@@ -20,6 +20,7 @@ class MongoDB:
 
      def get_db(self):
           return self.db
+
      async def initial_index(self):
           await self.user_collection.create_index([('email', 1)], unique=True)
           await self.resume_collection.create_index([('user_id', 1)])
@@ -188,3 +189,49 @@ class MongoDB:
                raise e
           # end try
      
+     async def insert_skill_impact(self,skill:str,skill_impact:dict):
+          try:
+               
+               skill_impact['skill'] = skill
+               
+               result = await self.skill_impact_collection.insert_one(skill_impact)
+               return {"message":"Skill impact inserted successfully","skill_impact_id":str(result.inserted_id)}
+               
+          except Exception as e:
+               raise e
+          
+     async def get_skill_impact(self,skill:str):
+          try:
+               skill_impact = await self.skill_impact_collection.find_one({'skill':skill},{
+                    "_id":0,
+                    "skill":0,
+               })
+               return skill_impact
+          except Exception as e:
+               raise e
+
+     async def get_user_resume(self, user_id: str):
+          try:
+               user_id = ObjectId(user_id)
+               resume = await self.resume_collection.find_one({'user_id':user_id},{
+                    "_id":0,
+                    "user_id":0,
+                    "createdAt":0,
+                    "updatedAt":0,
+                    
+               })
+               
+               return resume
+          except Exception as e:
+               raise e
+
+     async def get_gig_description(self, gig_id: str):
+          try:
+               gig_id = ObjectId(gig_id)
+               gig = await self.job_collection.find_one({'_id':gig_id})
+               if gig:
+                    gig['_id'] = str(gig['_id'])
+                    gig['user_id'] = str(gig['user_id'])
+               return gig
+          except Exception as e:
+               raise e

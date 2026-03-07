@@ -292,9 +292,9 @@ class MatchGig:
                print(f"[Notify] Gig {gig_id} → {len(matched_user_ids)} users notified (domain: {gig_domain})")
                return matched_user_ids
 
-     except Exception as e:
-          raise HTTPException(status_code=500, detail=str(e))
-        
+          except Exception as e:
+               raise HTTPException(status_code=500, detail=str(e))
+          
      async def get_user_this_month_match_gig(self, user_id: str):
           try:
                count = await self.mongodb.activityLog_collection.count_documents({
