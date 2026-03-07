@@ -13,7 +13,7 @@ client = AsyncQdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)
 
 GIG_COLLECTION    = "gigs"
 RESUME_COLLECTION = "resumes"
-VECTOR_SIZE       = 384  # all-MiniLM-L6-v2
+VECTOR_SIZE       = 1024  #BAAI/bge-base-en-v1.5
 
 
 async def create_collections():
