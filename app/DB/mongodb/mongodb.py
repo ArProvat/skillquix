@@ -16,6 +16,7 @@ class MongoDB:
           self.matches_collection = self.db['Matches']
           self.clearityScore_collection = self.db['ClearityScore']
           self.activityLog_collection = self.db['ActivityLog']
+          self.skillGap_collection = self.db['SkillGap']
 
 
      def get_db(self):
@@ -251,5 +252,31 @@ class MongoDB:
                     
                })
                return "Responsibilities: " + " ".join(gig['responsibilities']) +"\n"+ "Job Description: " + " ".join(gig['jobDescription'])
+          except Exception as e:
+               raise e
+
+     async def insert_skill_gap(self,user_id:str,gig_id:str,skill_gap:dict):
+          try:
+               user_id = ObjectId(user_id)
+               gig_id = ObjectId(gig_id)
+               skill_gap['user_id'] = user_id
+               skill_gap['gig_id'] = gig_id
+               result = await self.skillGap_collection.insert_one(skill_gap)
+               return {"message":"Skill gap inserted successfully","skill_gap_id":str(result.inserted_id)}
+          except Exception as e:
+               raise e
+     async def get_skill_gap(self,user_id:str,gig_id:str):
+          try:
+               user_id = ObjectId(user_id)
+               gig_id = ObjectId(gig_id)
+               skill_gap = await self.skillGap_collection.find_one({'user_id':user_id,'gig_id':gig_id},{
+                    "_id":0,
+                    "user_id":0,
+                    "gig_id":0,
+                    "createdAt":0,
+                    "updatedAt":0,
+                    
+               })
+               return skill_gap
           except Exception as e:
                raise e
