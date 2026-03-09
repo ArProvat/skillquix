@@ -13,7 +13,8 @@ client = AsyncQdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)
 
 GIG_COLLECTION    = "gigs"
 RESUME_COLLECTION = "resumes"
-VECTOR_SIZE       = 1024  #BAAI/bge-base-en-v1.5
+MENTOR_COLLECTION = "mentors"
+VECTOR_SIZE       = 768  #BAAI/bge-base-en-v1.5
 
 
 async def create_collections():
@@ -60,7 +61,34 @@ async def upsert_resume_embedding(user_id: str, embedding: list):
           ]
      )
 
+async def upsert_mentor_embedding(mentor_id: str, embedding: list):
+     await client.upsert(
+          collection_name=MENTOR_COLLECTION,
+          points=[
+               PointStruct(
+                    id=_id_to_int(mentor_id),
+                    vector=embedding,
+                    payload={"mongo_id": mentor_id}
+               )
+          ]
+     )
 
+
+
+async def search_similar_mentors(embedding:list,limit:int=10)->list[dict]:
+     results = await client.query_points(
+          collection_name=MENTOR_COLLECTION,
+          query=embedding,
+          limit=limit,
+          score_threshold=0.70,
+     )
+     return [
+          {
+               "mentor_id": hit.payload["mongo_id"],
+               "score": hit.score
+          }
+          for hit in results.points      # ← .points not direct iteration
+     ]
 
 
 async def search_similar_gigs(embedding: list, limit: int) -> list[dict]:
