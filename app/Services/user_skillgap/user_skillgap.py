@@ -12,7 +12,7 @@ class skillgap_service:
           self.openai_client = AsyncOpenAI(
                api_key=settings.OPENAI_API_KEY
           )
-          self.
+          self.user_skillgap_prompt = settings.USER_SKILLGAP_PROMPT
 
      async def get_user_resume(self, user_id: str) -> str:
           
