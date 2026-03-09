@@ -9,5 +9,6 @@ class UserSkillGapRequest(BaseModel):
 class UserSkillGapResponse(BaseModel):
      match_skills_of_user_with_gig: list[str] = Field(..., description="Match skills of user with gig at max 5 skills ")
      skill_gap_of_user_with_gig: list[str] = Field(..., description="Skill gap of user with gig at max 5 skills ")
+     skil_gap_importance: str = Field(...,description='5-8 word sentece is identified skill gap is major drawback for user or not  ')
      
      

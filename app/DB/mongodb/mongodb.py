@@ -224,14 +224,32 @@ class MongoDB:
                return resume
           except Exception as e:
                raise e
-
+     async def get_user_skill(self,user_id:str):
+          try:
+               user_id = ObjectId(user_id)
+               skill = await self.resume_collection.find_one({'user_id':user_id},{
+                    "tech_stack":1,
+                    "_id":0,
+                    "user_id":0,
+                    "createdAt":0,
+                    "updatedAt":0,
+                    
+               })
+               return skill
+          except Exception as e:
+               raise e
      async def get_gig_description(self, gig_id: str):
           try:
                gig_id = ObjectId(gig_id)
-               gig = await self.job_collection.find_one({'_id':gig_id})
-               if gig:
-                    gig['_id'] = str(gig['_id'])
-                    gig['user_id'] = str(gig['user_id'])
-               return gig
+               gig = await self.job_collection.find_one({'_id':gig_id},{
+                    "responsibilities":1,
+                    "jobDescription":1,
+                    "_id":0,
+                    "user_id":0,
+                    "createdAt":0,
+                    "updatedAt":0,
+                    
+               })
+               return "Responsibilities: " + " ".join(gig['responsibilities']) +"\n"+ "Job Description: " + " ".join(gig['jobDescription'])
           except Exception as e:
                raise e
