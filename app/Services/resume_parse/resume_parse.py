@@ -3,7 +3,7 @@
 from openai import AsyncOpenAI
 from app.config.settings import settings
 from app.prompt.prompt import resume_parse_system_prompt
-from .resume_parse_schema import ResumeParse
+from .resume_parse_schema import UniversalResume
 
 
 class ResumeParseService:
@@ -11,7 +11,7 @@ class ResumeParseService:
           self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
           self.system_prompt = resume_parse_system_prompt
 
-     async def parse_resume(self, resume_text: str) -> ResumeParse:
+     async def parse_resume(self, resume_text: str) -> UniversalResume:
           try:
                print(resume_text)
                if not resume_text:
@@ -20,7 +20,7 @@ class ResumeParseService:
                messages = [
                     {
                          "role": "system",
-                         "content": self.system_prompt.format(schema=ResumeParse.model_json_schema())
+                         "content": self.system_prompt.format(schema=UniversalResume.model_json_schema())
                     },
                     {
                          "role": "user",
@@ -32,7 +32,7 @@ class ResumeParseService:
                     model="gpt-4o-mini",  
                     messages=messages,
                     temperature=0.5,
-                    response_format=ResumeParse
+                    response_format=UniversalResume
                )
 
                return completion.choices[0].message.parsed
