@@ -1,43 +1,30 @@
-FROM python:3.11-slim AS builder
+FROM python:3.11-slim As builder
 
-# Install build deps only in builder — NOT copied to final image
-RUN apt-get update && \
-     apt-get install -y --no-install-recommends \
-          build-essential \
-          gcc \
-          ca-certificates \
-     && rm -rf /var/lib/apt/lists/*
+RUN sed -i 's/ main$/ main contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources && \
+     apt-get update && \
+     apt-get install -y --no-install-recommends build-essential ffmpeg ca-certificates && \
+     rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+WORKDIR /app 
 
 COPY requirements.txt .
 
-# ✅ CPU-only torch — saves ~1.5GB
 RUN pip install --no-cache-dir --upgrade pip && \
-     pip install --no-cache-dir \
-          torch==2.2.0+cpu \
-          --index-url https://download.pytorch.org/whl/cpu && \
      pip install --no-cache-dir -r requirements.txt && \
      pip install --no-cache-dir duckduckgo-search curl-cffi
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-
 FROM python:3.11-slim
 
-# ✅ Runtime only needs ffmpeg + ca-certificates — NOT build-essential
-RUN apt-get update && \
-     apt-get install -y --no-install-recommends \
-          ffmpeg \
-          ca-certificates \
-     && rm -rf /var/lib/apt/lists/*
+RUN sed -i 's/ main$/ main contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources && \
+     apt-get update && \
+     apt-get install -y --no-install-recommends build-essential ffmpeg ca-certificates && \
+     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy installed packages from builder
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
-
 
 COPY . .
 

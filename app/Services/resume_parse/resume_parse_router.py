@@ -24,7 +24,6 @@ async def resume_parse(
 
           file_extension = file.filename.split(".")[-1]
           extracted_text = await FileHandler.file_handler(await file.read(), file_extension)
-          print(extracted_text)
           result = await ResumeParseService().parse_resume(extracted_text)
           return result
 
