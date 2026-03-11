@@ -105,7 +105,7 @@ class MatchGig:
                {"embedding": 1, "metaData.domain": 1, "metaData.subdomain": 1}
           )
           if not resume_doc:
-               raise HTTPException(status_code=404, detail=f"Resume not found for userId: {user_id}")
+               return []
 
           embedding = resume_doc.get("embedding")
           if not embedding:
