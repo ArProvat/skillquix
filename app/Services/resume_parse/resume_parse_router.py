@@ -3,7 +3,6 @@ from .resume_parse import ResumeParseService
 from fastapi import UploadFile, File
 from app.utils.file_handler import FileHandler
 from app.DB.mongodb.mongodb import MongoDB
-from .resume_parse_schema import Skill
 from typing import Optional
 
 router = APIRouter()

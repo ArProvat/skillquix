@@ -5,7 +5,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from app.DB.mongodb.mongodb import MongoDB
 from app.Services.match_gig.match_gig import MatchGig
 from app.Services.clearity_score.clearity_score import get_clearity_score_service 
-
+'''
 
 async def refresh_all_recommendations():
      """Every 24hrs — re-run vector search for all users, find new gig matches."""
@@ -37,7 +37,7 @@ async def refresh_all_recommendations():
      print(f"[CRON] Done — {success} refreshed, {len(failed)} failed")
 
 
-
+'''
 async def refresh_all_activity_scores():
      print(f"[CRON] Activity score refresh started at {datetime.now(datetime.timezone.utc)}")
      mongodb = MongoDB()
@@ -70,13 +70,13 @@ def start_scheduler():
 
      scheduler = AsyncIOScheduler()
 
-     # Gig matches — every 12 hours
+     ''' # Gig matches — every 12 hours
      scheduler.add_job(
           refresh_all_user_matches,
           trigger="interval", hours=12,
           id="refresh_matches",
           next_run_time=datetime.now(timezone.utc),
-     )
+     )'''
 
      # Activity scores — every 24 hours
      scheduler.add_job(

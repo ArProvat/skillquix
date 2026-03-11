@@ -19,7 +19,7 @@ VECTOR_SIZE       = 768  #BAAI/bge-base-en-v1.5
 
 async def create_collections():
      """Run once on startup — safe to re-run, skips if exists."""
-     for name in [GIG_COLLECTION, RESUME_COLLECTION]:
+     for name in [GIG_COLLECTION, RESUME_COLLECTION,MENTOR_COLLECTION]:
           exists = await client.collection_exists(name)
           if not exists:
                await client.create_collection(
