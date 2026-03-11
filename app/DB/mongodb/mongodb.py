@@ -1,7 +1,6 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from app.config.settings import settings
 from bson import ObjectId
-from app.Services.resume_parse.resume_parse_schema import Skill
 
 class MongoDB:
      def __init__(self):
@@ -72,60 +71,6 @@ class MongoDB:
 
      from bson import ObjectId
 
-     async def smart_upsert_skill(self, user_id: str, Skill:Skill):
-          try:
-               oid = ObjectId(user_id)
-               skill_name = Skill.skills.name
-               category = Skill.category
-               
-               update_result = await self.resume_collection.update_one(
-                    {
-                         "_id": oid,
-                         "tech_stack": {
-                              "$elemMatch": {
-                              "category": category,
-                              "skills.skill": skill_name
-                              }
-                         }
-                    },
-                    {
-                         "$set": {
-                              "tech_stack.$[cat].skills.$[sk].proficiency_level": Skill.skills.proficiency_level,
-                              "tech_stack.$[cat].skills.$[sk].years_of_experience": Skill.skills.years_of_experience
-                         }
-                    },
-                    array_filters=[
-                         {"cat.category": category},
-                         {"sk.skill": skill_name}
-                    ]
-               )
-
-               # 2. If no skill was updated, it means either the skill or category is missing
-               if update_result.matched_count == 0:
-                    # Reuse your insert logic: push to category if exists, or create new category
-                    await self.resume_collection.bulk_write([
-                         # Push to existing category
-                         UpdateOne(
-                              filter={'_id': oid, "tech_stack.category": category},
-                              update={"$push": {"tech_stack.$.skills": skill.skills}}
-                         ),
-                         # Create category if missing
-                         UpdateOne(
-                              filter={'_id': oid, "tech_stack.category": {"$ne": category}},
-                              update={
-                              "$push": {
-                                   "tech_stack": {"category": category, "skills": [skill.skills]}
-                              }
-                              }
-                         )
-                    ])
-                    return {"message": "New skill/category added successfully"}
-               
-               return {"message": "Existing skill info updated"}
-
-          except Exception as e:
-               print(f"Smart Upsert Error: {e}")
-               raise e
 
      async def get_skill(self,user_id:str):
           try:
