@@ -5,8 +5,12 @@ from pydantic import BaseModel, Field, ConfigDict
 class SkillData(BaseModel):
     model_config = ConfigDict(extra='forbid')
     category: str = Field(...,description="category of the skill")
-    skills: List[str] = Field(...,description="skills of the person")
+    Skills: List[str] = Field(...,description="skills of the person")
 
+
+class social_links(BaseModel):
+     social_media: Optional[str] = Field(None,description="social media of the person")
+     link: Optional[str] = Field(None,description="link of the social media")
 # --- New: Specific shape for Certifications ---
 class CertificationData(BaseModel):
     model_config = ConfigDict(extra='forbid')
@@ -30,10 +34,11 @@ class ExperienceData(BaseModel):
 
 class EducationData(BaseModel):
     model_config = ConfigDict(extra='forbid')
-    institution: str = Field(...,description="institution of the person")
-    degree: str = Field(...,description="degree of the person")
+    institution: Optional[str] = Field(None,description="institution of the person")
+    degree: Optional[str] = Field(None,description="degree of the person")
     field_of_study: Optional[str] = Field(None, alias="fieldOfStudy",description="field of study of the person")
-    graduation_year: str = Field(alias="graduationYear",description="graduation year of the person")
+    graduation_year: Optional[str] = Field(None, alias="graduationYear",description="graduation year of the person or expected graduation year or running")
+    location: Optional[str] = Field(None,description="location of the institution if there")
 
 class ProjectData(BaseModel):
     model_config = ConfigDict(extra='forbid')
@@ -71,7 +76,7 @@ class TableData(BaseModel):
     )
     # If the AI can flatten the table into a known type, it does so here
     flattened_data: Optional[
-        Union[SkillData, ExperienceData, CertificationData, GenericData]
+        Union[SkillData, ExperienceData, CertificationData,social_links, GenericData]
     ] = Field(
         None,
         alias="flattenedData",
@@ -84,20 +89,19 @@ class FormatQuality(str, Enum):
 
 class CandidateSectionItem(BaseModel):
     model_config = ConfigDict(extra='forbid')
-    data: Union[ExperienceData, EducationData, ProjectData, 
-                SkillData, CertificationData, GenericData,TableData]
+    data: Union[ExperienceData, EducationData, ProjectData, CertificationData, GenericData,TableData]
     order_index: int = Field(default=0, alias="orderIndex")
     
     # --- NEW: Quality & Audit Fields ---
-    format_quality: FormatQuality = Field(
-        default=FormatQuality.CLEAN,
+    format_quality: Optional[FormatQuality] = Field(
+        None,
         alias="formatQuality",
         description="Indicates whether the AI had to reformat this item"
     )
     normalization_notes: Optional[str] = Field(
         None,
         alias="normalizationNotes", 
-        description="Brief note on what was corrected e.g. 'merged fragmented bullet points'"
+        description="Brief note on what was corrected e.g. 'merged fragmented bullet points in one line max 10 words'"
     )
 
 class CandidateSection(BaseModel):
@@ -120,4 +124,5 @@ class Candidate(BaseModel):
     location: Optional[str] = Field(None,description="location of the person")
     summary: Optional[str] = Field(None,description="summary of the person")
     total_exp: Optional[str] = Field(None, alias="totalExp",description="total experience of the person")
+    skills: List[SkillData] = Field(...,description="all categories of skills ")
     sections: List[CandidateSection] = Field(...,description="all sections of the resume")
