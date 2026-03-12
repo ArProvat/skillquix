@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field, ConfigDict
 class SkillData(BaseModel):
     model_config = ConfigDict(extra='forbid')
     category: str = Field(...,description="category of the skill")
-    skills: List[str] = Field(...,description="skills of the person")
+    Skills: List[str] = Field(...,description="skills of the person")
 
 # --- New: Specific shape for Certifications ---
 class CertificationData(BaseModel):
@@ -84,8 +84,7 @@ class FormatQuality(str, Enum):
 
 class CandidateSectionItem(BaseModel):
     model_config = ConfigDict(extra='forbid')
-    data: Union[ExperienceData, EducationData, ProjectData, 
-                SkillData, CertificationData, GenericData,TableData]
+    data: Union[ExperienceData, EducationData, ProjectData, CertificationData, GenericData,TableData]
     order_index: int = Field(default=0, alias="orderIndex")
     
     # --- NEW: Quality & Audit Fields ---
@@ -120,4 +119,5 @@ class Candidate(BaseModel):
     location: Optional[str] = Field(None,description="location of the person")
     summary: Optional[str] = Field(None,description="summary of the person")
     total_exp: Optional[str] = Field(None, alias="totalExp",description="total experience of the person")
+    skills: List[SkillData] = Field(...,description="all categories of skills ")
     sections: List[CandidateSection] = Field(...,description="all sections of the resume")
