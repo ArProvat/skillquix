@@ -17,6 +17,7 @@ ddgs
 duckduckgo-search
 python-dotenv
 pymupdf
+pdfplumber
 python-docx
 sentence-transformers    
 qdrant-client

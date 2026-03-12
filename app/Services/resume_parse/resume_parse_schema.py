@@ -1,77 +1,123 @@
-# resume_parse_schema.py
-from __future__ import annotations
-from typing import List, Optional, Union
-from pydantic import BaseModel, Field
+from typing import List, Optional, Union, Literal
+from pydantic import BaseModel, Field, ConfigDict
 
+# --- 1. Define specific shapes for dynamic data ---
+class SkillData(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    category: str = Field(...,description="category of the skill")
+    skills: List[str] = Field(...,description="skills of the person")
 
+# --- New: Specific shape for Certifications ---
+class CertificationData(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    name: str = Field(...,description="name of the certification")
+    issuer: str = Field(...,description="issuer of the certification")
+    issue_date: Optional[str] = Field(None, alias="issueDate",description="issue date of the certification")
+    expiry_date: Optional[str] = Field(None, alias="expiryDate",description="expiry date of the certification")
+    credential_id: Optional[str] = Field(None, alias="credentialId",description="credential id of the certification")
 class ExperienceData(BaseModel):
-     company:        str
-     role:           str
-     location:       Optional[str] = None
-     duration:       Optional[str] = None
-     employmentType: Optional[str] = None
-     description:    Optional[str] = None
-     techStack:      List[str] = Field(default_factory=list)
-
-
-class ProjectData(BaseModel):
-     name:        str
-     role:        Optional[str] = None
-     duration:    Optional[str] = None
-     techStack:   List[str] = Field(default_factory=list)
-     description: Optional[str] = None
-     githubUrl:   Optional[str] = None   # ← str not HttpUrl
-     liveUrl:     Optional[str] = None   # ← str not HttpUrl
-
+    model_config = ConfigDict(extra='forbid')
+    company: str = Field(...,description="company of the person")
+    role: str = Field(...,description="role of the person")
+    location: Optional[str] = Field(None,description="location of the person")
+    start_date: Optional[str] = Field(None, alias="startDate",description="start date of the person")   # YYYY-MM-DD
+    end_date: Optional[str] = Field(None, alias="endDate",description="end date of the person")       # null if current
+    is_current: bool = Field(False, alias="isCurrent",description="is current of the person")
+    duration: Optional[str] = None  # keep as fallback if dates unparseable
+    responsibilities: List[str]
+    tech_stack: List[str] = Field(default_factory=list, alias="techStack")
+    achievements: List[str] = Field(default_factory=list)
 
 class EducationData(BaseModel):
-     institution: str
-     degree:      Optional[str] = None
-     field:       Optional[str] = None
-     duration:    Optional[str] = None
-     grade:       Optional[str] = None
+    model_config = ConfigDict(extra='forbid')
+    institution: str = Field(...,description="institution of the person")
+    degree: str = Field(...,description="degree of the person")
+    field_of_study: Optional[str] = Field(None, alias="fieldOfStudy",description="field of study of the person")
+    graduation_year: str = Field(alias="graduationYear",description="graduation year of the person")
 
+class ProjectData(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    title: str = Field(...,description="title of the project")
+    description: str = Field(...,description="description of the project")
+    technologies: List[str] = Field(...,description="technologies used in the project")
+    link: Optional[str] = Field(None,description="link to the project")
 
-class SkillData(BaseModel):
-     category: str
-     skills:   List[str] = Field(default_factory=list)
+class GenericData(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    label: str = Field(...,description="label of the generic data")
+    value: List[str] = Field(...,description="value of the generic data")
+    description: Optional[str] = Field(None,description="description of the generic data")
+# --- 2. The Dynamic Section Wrapper ---
 
+from enum import Enum
+class TableCell(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    value: str = Field(...,description="value of the table cell")
+    column_header: Optional[str] = Field(None, alias="columnHeader",description="column header of the table cell")
 
-class CertificationData(BaseModel):
-     name:          str
-     issuedBy:      str
-     issueDate:     Optional[str] = None
-     expiryDate:    Optional[str] = None
-     credentialUrl: Optional[str] = None  # ← str not HttpUrl
+class TableRow(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    row_index: int = Field(alias="rowIndex",description="row index of the table row")
+    cells: List[TableCell] = Field(...,description="cells of the table row")
 
+class TableData(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    headers: List[str] = Field(...,description="headers of the table")
+    rows: List[TableRow] = Field(...,description="rows of the table")
+    inferred_type: Optional[str] = Field(
+        None,
+        alias="inferredType",
+        description="What the table represents e.g. skills_matrix, employment_history, certifications"
+    )
+    # If the AI can flatten the table into a known type, it does so here
+    flattened_data: Optional[
+        Union[SkillData, ExperienceData, CertificationData, GenericData]
+    ] = Field(
+        None,
+        alias="flattenedData",
+        description="If table maps cleanly to a known schema type, populate this"
+    )
+class FormatQuality(str, Enum):
+    CLEAN = "clean"         # Source was well-structured
+    NORMALIZED = "normalized"  # AI had to reformat
+    INFERRED = "inferred"   # AI had to guess structure from context
 
-class SectionItem(BaseModel):
-     id:         str
-     orderIndex: int
-     data:       dict = Field(default_factory=dict)  # ← plain dict, not Union
+class CandidateSectionItem(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    data: Union[ExperienceData, EducationData, ProjectData, 
+                SkillData, CertificationData, GenericData,TableData]
+    order_index: int = Field(default=0, alias="orderIndex")
+    
+    # --- NEW: Quality & Audit Fields ---
+    format_quality: FormatQuality = Field(
+        default=FormatQuality.CLEAN,
+        alias="formatQuality",
+        description="Indicates whether the AI had to reformat this item"
+    )
+    normalization_notes: Optional[str] = Field(
+        None,
+        alias="normalizationNotes", 
+        description="Brief note on what was corrected e.g. 'merged fragmented bullet points'"
+    )
 
+class CandidateSection(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    
+    section_type: Literal["experience", "education", "projects", "research"] = Field(alias="sectionType")
+    title: str
+    order_index: int = Field(default=0, alias="orderIndex")
+    items: List[CandidateSectionItem]
 
-class ResumeSection(BaseModel):
-     id:          str
-     sectionType: str
-     title:       str
-     orderIndex:  int
-     items:       List[SectionItem] = Field(default_factory=list)
+# --- 3. The Root Model ---
 
-
-class Metadata(BaseModel):
-     domain:    str = "general"
-     subdomain: str = "general"
-
-
-class SkillQuixResume(BaseModel):
-     id:        str = ""
-     name:      str = ""
-     email:     str = ""
-     phone:     Optional[str] = None
-     location:  Optional[str] = None
-     summary:   Optional[str] = None
-     totalExp:  Optional[str] = None
-     avatarUrl: Optional[str] = None
-     sections:  List[ResumeSection] = Field(default_factory=list)
-     metaData:  Metadata = Field(default_factory=Metadata)
+class Candidate(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    domain: str= Field(...,description="domain of the resume")
+    subdomain: str = Field(...,description="subdomain of the resume")
+    name: str= Field(...,description="name of the person")
+    email: str= Field(...,description="email of the person")
+    phone: Optional[str] = Field(None,description="phone of the person")
+    location: Optional[str] = Field(None,description="location of the person")
+    summary: Optional[str] = Field(None,description="summary of the person")
+    total_exp: Optional[str] = Field(None, alias="totalExp",description="total experience of the person")
+    sections: List[CandidateSection] = Field(...,description="all sections of the resume")
