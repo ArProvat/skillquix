@@ -41,7 +41,7 @@ class MatchGig:
           1. Check recommendations collection → serve from DB if exists
           2. Otherwise → vector search → AI domain match → save → return
           """
-          rec_doc = await self.mongodb.recommendations_collection.find_one(
+          rec_doc = await self.mongodb.recommended_skill_collection.find_one(
                {"userId": ObjectId(user_id)},
                {"gigIds": 1, "scoreMap": 1, "resumeDomain": 1, "resumeSubdomain": 1}
           )
@@ -102,7 +102,7 @@ class MatchGig:
           # 1. Fetch resume with domain info
           resume_doc = await self.mongodb.resume_collection.find_one(
                {"userId": ObjectId(user_id)},
-               {"embedding": 1, "metaData.domain": 1, "metaData.subdomain": 1}
+               {"embedding": 1, "domain": 1, "subDomain": 1}
           )
           if not resume_doc:
                return []
@@ -111,8 +111,8 @@ class MatchGig:
           if not embedding:
                raise HTTPException(status_code=400, detail="Resume has no embedding yet")
 
-          resume_domain    = resume_doc.get("metaData.domain") or "unknown"
-          resume_subdomain = resume_doc.get("metaData.subdomain") or "general"
+          resume_domain    = resume_doc.get("domain") or "unknown"
+          resume_subdomain = resume_doc.get("subDomain") or "general"
 
           # 2. Vector search — get candidate gig IDs
           qdrant_results = await search_similar_gigs(embedding, limit=200)
@@ -128,11 +128,11 @@ class MatchGig:
                "gigTitle": 1, "industryName": 1, "description": 1, "location": 1,
                "duration": 1, "gigType": 1, "exparienceLevel": 1, "validUntil": 1,
                "createdAt": 1, "tech_stack": 1, "gigStatus": 1,
-               "metaData.domain": 1, "metaData.subdomain": 1, "category": 1,   # ← domain fields
+               "domain": 1, "subDomain": 1, "category": 1,   # ← domain fields
           }
           cursor = self.mongodb.job_collection.find({"_id": {"$in": object_ids}}, projection)
           gigs   = await cursor.to_list(length=200)
-
+          print('gigs', gigs)
           # 4. Build candidates for AI — only ACTIVE + not expired
           now = datetime.now(timezone.utc)
           ai_candidates = []
@@ -152,22 +152,24 @@ class MatchGig:
                gig_lookup[gig_id_str] = gig
                ai_candidates.append({
                     "gig_id":    gig_id_str,
-                    "domain":    gig.get("metaData.domain") or gig.get("category") or "unknown",
-                    "subdomain": gig.get("metaData.subdomain") or "general",
+                    "domain":    gig.get("domain") or gig.get("category") or "unknown",
+                    "subdomain": gig.get("gigTitle"),
                     "score":     round(score_map.get(gig_id_str, 0.0), 4),
                })
-
+          print("resume_domain", resume_domain)
+          print("resume_subdomain", resume_subdomain)
+          print("ai_candidates", ai_candidates)
           # 5. AI domain match
           matched_gig_ids = await ai_match_gigs_for_user(
                resume_domain, resume_subdomain, ai_candidates
           )
-
+          print("matched_gig_ids", matched_gig_ids)
           # 6. Build final list preserving score order
           matched_scores = {gid: score_map.get(gid, 0.0) for gid in matched_gig_ids}
 
           # 7. Save in background
           asyncio.create_task(
-               self._save_recommendations(user_id, matched_gig_ids, matched_scores, resume_domain, resume_subdomain)
+               self._save_recommendations(user_id, matched_gig_ids, matched_scores)
           )
 
           # 8. Format and paginate
@@ -193,43 +195,40 @@ class MatchGig:
      # ─────────────────────────────────────────────────────────────────────────
 
      async def notify_matched_users_for_gig(self, gig_id: str, embedding: list):
-          """
-          1. Vector search → get candidate resume user IDs
-          2. Fetch each user's domain + subdomain
-          3. AI decides which users are a genuine domain match
-          4. Add gig_id to matched users' recommendations
-          """
           try:
-               # Fetch gig domain info
                gig = await self.mongodb.job_collection.find_one(
                     {"_id": ObjectId(gig_id)},
-                    {"category": 1,"gigTitle": 1, "gigStatus": 1}
+                    {"gigTitle": 1, "category": 1, "gigStatus": 1}
                )
                if not gig or gig.get("gigStatus") != "ACTIVE":
                     return []
 
-               gig_domain    = gig.get("category") or "unknown"
-               gig_subdomain = gig.get("gigTitle") or "general"
+               gig_domain    = gig.get("category")
+               gig_subdomain = gig.get("gigTitle")
+               print("gig_domain", gig_domain)
+               print("gig_subdomain", gig_subdomain)
+               matched_users = await search_similar_resumes(embedding, limit=100)
+               print("matched_users", matched_users)
+               # ✅ Guard — ensure we got dicts not strings
+               if matched_users and isinstance(matched_users[0], str):
+                    raise ValueError(
+                         f"search_similar_resumes returned strings not dicts. "
+                         f"Fix vectordb.py to return list[dict] with 'user_id' and 'score'."
+                    )
 
-               # Vector search on resumes
-               qdrant_results = await search_similar_resumes(embedding, limit=100)
-               if not qdrant_results:
-                    return []
-
-               # Fetch resume domain info for each candidate user
                ai_candidates = []
                score_by_user = {}
 
-               for match in qdrant_results:
-                    user_id     = match.get("user_id")
+               for match in matched_users:
+                    user_id     = match.get("user_id")     # ← safe now
                     match_score = match.get("score", 0.0)
 
-                    if not user_id or match_score < 0.50:
+                    if not user_id or match_score < 0.60:
                          continue
 
                     resume_doc = await self.mongodb.resume_collection.find_one(
                          {"userId": ObjectId(user_id)},
-                         {"domain": 1, "subdomain": 1}
+                         {"domain": 1, "subDomain": 1}
                     )
                     if not resume_doc:
                          continue
@@ -237,25 +236,23 @@ class MatchGig:
                     score_by_user[user_id] = {
                          "score":     match_score,
                          "domain":    resume_doc.get("domain") or "unknown",
-                         "subdomain": resume_doc.get("subdomain") or "general",
+                         "subdomain": resume_doc.get("subDomain") or "general",
                     }
 
                     ai_candidates.append({
                          "user_id":   user_id,
                          "domain":    resume_doc.get("domain") or "unknown",
-                         "subdomain": resume_doc.get("subdomain") or "general",
+                         "subdomain": resume_doc.get("subDomain") or "general",
                          "score":     round(match_score, 4),
                     })
-
+               print("ai_candidates", ai_candidates)
                if not ai_candidates:
                     return []
 
-               # AI decides which users match the gig domain
                matched_user_ids = await ai_match_users_for_gig(
                     gig_domain, gig_subdomain, ai_candidates
                )
 
-               # Save gig to each matched user's recommendations + log activity
                tasks = []
                for user_id in matched_user_ids:
                     user_info     = score_by_user.get(user_id, {})
@@ -263,19 +260,22 @@ class MatchGig:
                     resume_domain = user_info.get("domain")
 
                     tasks.append(self._save_recommendations(
-                         user_id, [gig_id], {gig_id: match_score},
+                         user_id, [gig_id], {gig_id: match_score}
                     ))
-                    
+                    tasks.append(self.mongodb.activityLog_collection.insert_one({
+                         "userId":    ObjectId(user_id),
+                         "action":    "MATCHED_GIG",
+                         "createdAt": datetime.now(timezone.utc),
+                    }))
 
                if tasks:
                     await asyncio.gather(*tasks)
 
-               print(f"[Notify] Gig {gig_id} (domain: {gig_domain}) → {len(matched_user_ids)} users matched")
+               print(f"[Notify] Gig {gig_id} → {len(matched_user_ids)} users (domain: {gig_domain})")
                return matched_user_ids
 
           except Exception as e:
                raise HTTPException(status_code=500, detail=str(e))
-
      # ─────────────────────────────────────────────────────────────────────────
      # SAVE RECOMMENDATIONS
      # ─────────────────────────────────────────────────────────────────────────
@@ -285,10 +285,9 @@ class MatchGig:
           user_id: str,
           gig_ids: list[str],
           score_map: dict,
-          
      ):
           try:
-               existing     = await self.mongodb.recommendations_collection.find_one(
+               existing     = await self.mongodb.recommended_skill_collection.find_one(
                     {"userId": ObjectId(user_id)},
                     {"gigIds": 1, "scoreMap": 1}
                )
@@ -308,7 +307,7 @@ class MatchGig:
                     },
                }
 
-               await self.mongodb.recommendations_collection.update_one(
+               await self.mongodb.recommended_skill_collection.update_one(
                     {"userId": ObjectId(user_id)}, update, upsert=True
                )
                if new_ids:
