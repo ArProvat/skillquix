@@ -123,6 +123,6 @@ class Candidate(BaseModel):
     phone: Optional[str] = Field(None,description="phone of the person")
     location: Optional[str] = Field(None,description="location of the person")
     summary: Optional[str] = Field(None,description="summary of the person")
-    total_exp: Optional[str] = Field(None, alias="totalExp",description="total experience of the person")
+    total_exp: Optional[int] = Field(None, alias="totalExp",description="total experience of the person")
     skills: List[SkillData] = Field(...,description="all categories of skills ")
     sections: List[CandidateSection] = Field(...,description="all sections of the resume")

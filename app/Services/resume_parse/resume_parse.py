@@ -27,7 +27,7 @@ class ResumeParseService:
 
                # Using .beta.chat.completions.parse for Structured Outputs
                completion = await self.client.beta.chat.completions.parse(
-                    model="gpt-5-mini",  
+                    model="gpt-4o-mini",  
                     messages=messages,
                     response_format=Candidate
                )
