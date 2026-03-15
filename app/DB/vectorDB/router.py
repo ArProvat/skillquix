@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Form
+from fastapi import APIRouter, HTTPException, Depends, Form ,BackgroundTasks
 from .vectordb import  upsert_gig_embedding, upsert_resume_embedding,upsert_mentor_embedding
 from app.Services.match_gig.match_gig import MatchGig
 from .schema import UpsertEmbeddingRequest,UpsertResumeRequest
@@ -10,19 +10,18 @@ router = APIRouter()
 async def gig_embedding(
      gig_id: str,
      body: UpsertEmbeddingRequest,
-     ):
+     background_tasks: BackgroundTasks):
      try:
-          qdrant_result, matched_user_ids = await asyncio.gather(
-               upsert_gig_embedding(gig_id, body.embedding),
-               MatchGig().notify_matched_users_for_gig(gig_id, body.embedding),
+          qdrant_result = await upsert_gig_embedding(gig_id, body.embedding)
+     
+          background_tasks.add_task(
+               MatchGig().notify_matched_users_for_gig,
+               gig_id,
+               body.embedding,
           )
           return {
-               "message":          "Gig embedding upserted successfully",
-               "matched_users":    len(matched_user_ids),
-               "matched_user_ids": matched_user_ids,
-          }
-     except HTTPException:
-          raise
+               "message": "Gig embedding upserted successfully",
+               }
      except Exception as e:
           raise HTTPException(status_code=500, detail=str(e))
 

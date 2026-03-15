@@ -11,6 +11,7 @@ class MongoDB:
           self.cover_letter_collection = self.db['CoverLetter']
           self.job_collection = self.db['Gig']
           self.recommended_skill_collection = self.db['Matches']
+          self.notify_gig_match = self.db["gigMatches"]
           self.skill_impact_collection = self.db['SkillImpact']
           self.matches_collection = self.db['Matches']
           self.clearityScore_collection = self.db['ClearityScore']
