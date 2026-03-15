@@ -12,13 +12,25 @@ from app.Services.match_gig.match_gig_router import router as match_gig_router
 from app.DB.vectorDB.router import router as vectorDB_router
 from app.utils.cron import start_scheduler
 from app.Services.match_gig.match_gig import get_match_gig
+from app.DB.vectorDB.vectordb import create_collections, client, GIG_COLLECTION, VECTOR_SIZE
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-     await create_collections()     # Qdrant collections
-     start_scheduler()  
-     get_match_gig()            # 12hr cron job
-     yield
+    # Auto-detect dimension mismatch on startup
+    try:
+        info = await client.get_collection(GIG_COLLECTION)
+        existing_dim = info.config.params.vectors.size
+        if existing_dim != VECTOR_SIZE:
+            print(f"⚠️  Dimension mismatch: existing={existing_dim}, required={VECTOR_SIZE}")
+            print("🔄 Recreating collections...")
+            from app.DB.vectorDB.vectordb import recreate_collections
+            await recreate_collections()
+    except Exception:
+        await create_collections()   # collection doesn't exist yet
+
+    get_match_gig()        # warm up model
+    start_scheduler()
+    yield
 
 app = FastAPI(
      title="SkillQuix",

@@ -39,7 +39,7 @@ async def refresh_all_recommendations():
 
 '''
 async def refresh_all_activity_scores():
-     print(f"[CRON] Activity score refresh started at {datetime.now(datetime.timezone.utc)}")
+     print(f"[CRON] Activity score refresh started at {datetime.now(timezone.utc)}")
      mongodb = MongoDB()
      service = get_clearity_score_service()
 

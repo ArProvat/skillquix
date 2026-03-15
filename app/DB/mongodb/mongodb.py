@@ -7,7 +7,7 @@ class MongoDB:
           self.client = AsyncIOMotorClient(settings.MONGODB_URL)
           self.db = self.client[settings.DB_NAME]
           self.user_collection = self.db['User']
-          self.resume_collection = self.db['Resume']
+          self.resume_collection = self.db['ResumeProfile']
           self.cover_letter_collection = self.db['CoverLetter']
           self.job_collection = self.db['Gig']
           self.recommended_skill_collection = self.db['Matches']

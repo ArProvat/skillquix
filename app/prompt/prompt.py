@@ -67,6 +67,8 @@ A table like | Python | Expert | 5 yrs | should become:
 - **No Hallucinations**: If a phone number or email isn't there, do not invent one.
 - **No Markdown**: Return ONLY the raw JSON. No "Here is the result" text.
 - **Completeness**: Do not summarize. Every role and project listed in the text must have a corresponding entry in the `sections` array.
+- Must always return valid skill from user resume which is go with user resume domain
+- some time skill are not clearly or expelecitly write as skill ,but must anlysis the resume find out valid resume domain skill alwayse 
 
 ### OUTPUT SCHEMA
 {schema}
