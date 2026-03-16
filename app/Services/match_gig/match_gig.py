@@ -201,26 +201,21 @@ class MatchGig:
                     {"gigTitle": 1, "category": 1, "gigStatus": 1}
                )
                if not gig or gig.get("gigStatus") != "ACTIVE":
-                    return []
+                    return
 
                gig_domain    = gig.get("category")
                gig_subdomain = gig.get("gigTitle")
-               print("gig_domain", gig_domain)
-               print("gig_subdomain", gig_subdomain)
+
                matched_users = await search_similar_resumes(embedding, limit=100)
-               print("matched_users", matched_users)
-               # ✅ Guard — ensure we got dicts not strings
+
                if matched_users and isinstance(matched_users[0], str):
-                    raise ValueError(
-                         f"search_similar_resumes returned strings not dicts. "
-                         f"Fix vectordb.py to return list[dict] with 'user_id' and 'score'."
-                    )
+                    raise ValueError("search_similar_resumes returned strings not dicts.")
 
                ai_candidates = []
                score_by_user = {}
 
                for match in matched_users:
-                    user_id     = match.get("user_id")     # ← safe now
+                    user_id     = match.get("user_id")
                     match_score = match.get("score", 0.0)
 
                     if not user_id or match_score < 0.60:
@@ -245,25 +240,52 @@ class MatchGig:
                          "subdomain": resume_doc.get("subDomain") or "general",
                          "score":     round(match_score, 4),
                     })
-               print("ai_candidates", ai_candidates)
+
                if not ai_candidates:
-                    return []
+                    return
 
                matched_user_ids = await ai_match_users_for_gig(
                     gig_domain, gig_subdomain, ai_candidates
                )
 
-               tasks = []
-               for user_id in matched_user_ids:
-                    user_info     = score_by_user.get(user_id, {})
-                    match_score   = user_info.get("score", 0.0)
-                    resume_domain = user_info.get("domain")
+               if not matched_user_ids:
+                    return
 
+               # ── Build matched users list with score ───────────────────────────
+               matched_users_with_score = [
+                    {
+                         "userId": ObjectId(uid),
+                         "score":  score_by_user.get(uid, {}).get("score", 0.0),
+                    }
+                    for uid in matched_user_ids
+               ]
+
+               # ── Save to gigMatches collection ─────────────────────────────────
+               await self.mongodb.notify_gig_match.update_one(
+                    {"gigId": ObjectId(gig_id)},
+                    {
+                         "$set": {
+                              "gigId":        ObjectId(gig_id),
+                              "matchedUsers": matched_users_with_score,
+                              "status":       False,          
+                              "updatedAt":    datetime.now(timezone.utc),
+                         },
+                         "$setOnInsert": {
+                              "createdAt": datetime.now(timezone.utc),
+                         },
+                    },
+                    upsert=True,
+               )
+
+               # ── Save to recommendations + log activity ────────────────────────
+               tasks = []
+               for uid in matched_user_ids:
+                    match_score = score_by_user.get(uid, {}).get("score", 0.0)
                     tasks.append(self._save_recommendations(
-                         user_id, [gig_id], {gig_id: match_score}
+                         uid, [gig_id], {gig_id: match_score}
                     ))
                     tasks.append(self.mongodb.activityLog_collection.insert_one({
-                         "userId":    ObjectId(user_id),
+                         "userId":    ObjectId(uid),
                          "action":    "MATCHED_GIG",
                          "createdAt": datetime.now(timezone.utc),
                     }))
@@ -271,11 +293,10 @@ class MatchGig:
                if tasks:
                     await asyncio.gather(*tasks)
 
-               print(f"[Notify] Gig {gig_id} → {len(matched_user_ids)} users (domain: {gig_domain})")
-               return matched_user_ids
+               print(f"[Notify] Gig {gig_id} → {len(matched_user_ids)} users saved (domain: {gig_domain})")
 
           except Exception as e:
-               raise HTTPException(status_code=500, detail=str(e))
+               print(f"[Notify] Error for gig {gig_id}: {e}")
      # ─────────────────────────────────────────────────────────────────────────
      # SAVE RECOMMENDATIONS
      # ─────────────────────────────────────────────────────────────────────────
