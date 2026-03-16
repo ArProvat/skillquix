@@ -261,7 +261,7 @@ class MatchGig:
                ]
 
                # ── Save to gigMatches collection ─────────────────────────────────
-               await self.mongodb.gigMatches_collection.update_one(
+               await self.mongodb.notify_gig_match.update_one(
                     {"gigId": ObjectId(gig_id)},
                     {
                          "$set": {

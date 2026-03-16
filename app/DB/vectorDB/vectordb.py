@@ -77,9 +77,9 @@ async def upsert_gig_embedding(gig_id: str, embedding: list) -> None:
      await _upsert(GIG_COLLECTION, gig_id, embedding)
 
 
-'''async def upsert_resume_embedding(user_id: str, embedding: list) -> None:
+async def upsert_resume_embedding(user_id: str, embedding: list) -> None:
      await _upsert(RESUME_COLLECTION, user_id, embedding)
-'''
+
 
 async def upsert_mentor_embedding(mentor_id: str, embedding: list) -> None:
      await _upsert(MENTOR_COLLECTION, mentor_id, embedding)
@@ -92,30 +92,7 @@ async def upsert_mentor_embedding(mentor_id: str, embedding: list) -> None:
 
 # vectordb.py — add verification to upsert
 
-async def upsert_resume_embedding(user_id: str, embedding: list):
-     point_id = _id_to_int(user_id)
-     print(f"[Qdrant] Upserting resume — user_id: {user_id}, point_id: {point_id}, dim: {len(embedding)}")
 
-     await client.upsert(
-          collection_name=RESUME_COLLECTION,
-          points=[
-               PointStruct(
-                    id=point_id,
-                    vector=embedding,
-                    payload={"mongo_id": user_id}
-               )
-          ]
-     )
-
-     # ✅ Verify immediately after upsert
-     verify = await client.retrieve(
-          collection_name=RESUME_COLLECTION,
-          id=[point_id],
-          with_vectors=False,
-          with_payload=True,
-     )
-     print(f"[Qdrant] Verify after upsert: {verify}")
-     return point_id
 
 
 async def get_embedding_by_id(collection_name: str, mongo_id: str) -> list | None:
